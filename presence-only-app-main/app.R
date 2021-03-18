@@ -14,6 +14,7 @@ library(rpart)
 library(randomForest)
 library(dismo)
 library(nnet)
+library(bit64)
 
 #########################################################
 ## BlueMountains 
@@ -40,9 +41,11 @@ geo$Hessen100fact_LRT <- focal(geo$Hessen100fact_LRT, w=matrix(1/9, nc=3, nr=3),
 geo$Hessen100fact_LRT <- focal(geo$Hessen100fact_LRT, w=matrix(1/9, nc=3, nr=3),fun=mean,na.rm=1)
 geo$Hessen100fact_LRT <- focal(geo$Hessen100fact_LRT, w=matrix(1/9, nc=3, nr=3),fun=mean,na.rm=1)
 geo$Hessen100fact_LRT <- focal(geo$Hessen100fact_LRT, w=matrix(1/9, nc=3, nr=3),fun=mean,na.rm=1)
-geo_Hessen <- mask(geo,referenz)
+geo_Hessen <- mask(geo,referenz, maskvalue = "NA")
 geo_Hessen_stack <- stack(geo_Hessen)
-geo_Hessen_im <- as.im(as.data.frame(geo_Hessen_stack,xy=1))
+geo_Hessen_frame <- as.data.frame(geo_Hessen_stack)
+geo_Hessen_rein <- na.omit(geo_Hessen_frame)
+geo_Hessen_im <- as.im(as.data.frame(geo_Hessen,xy=1))
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -109,7 +112,7 @@ ui <- fluidPage(
         ),
         tabPanel("IPP",h1("Fitting with IPP"),sidebarLayout(
             sidebarPanel(
-                width = 2,
+                width = 5,
                 textInput("IPP_model","Model trend",width = '100%',value = "rv$pres2~."),
                 sliderInput("IPP_grid","Grid ",value = 10,min = 10,max=300,step = 10),
                 selectInput("correction", "Boarder correction:",
@@ -124,6 +127,9 @@ ui <- fluidPage(
                 selectInput("method", "Fitting method",
                             list(`Examples` = list("mpl", "logi" , "VBlogi", "ho")
                             ), selected = "mpl"),
+                plotOutput("subsetselect",width = "100%",height = "500px", brush = "subset_selected"),
+                actionButton("subselect","Add subset"),
+                textOutput("tester"),
                 actionButton("IPP_fit","FIT MODEL")),
             mainPanel(h3("Prediction"),
                       plotOutput("IPP_predict",width = "100%",height = "1000px"),
@@ -177,6 +183,25 @@ ui <- fluidPage(
                 width = 2,
                 textInput("ME_model","Model trend",width = '100%',value = "type~."),
                 sliderInput("ME_abs","pseudo-absence",value = 10,min = 10,max=10000,step = 10),
+                sliderInput("bckgrnd","Background Points",value = 10,min = 10,max=10000,step = 10),
+                sliderInput("testpoints","Random Test Points Percentage",value = 0,min = 0,max=99,step = 1),
+                numericInput("betamult","Betamultiplier",value = 1,min = 1),
+                numericInput("replicates","Replicates",value = 1,min = 1),
+                selectInput("replicatetype", "Replicatetype:",
+                            list(`Examples` = list("crossvalidate", "bootstrap" , "subsample"))),
+                numericInput("maxits","Maximum Iterations",value = 500,min = 1),
+                numericInput("cvrgncthresh","Convergencethreshold(log(-x))",value = 5,min = 1),
+                checkboxInput("dupl", label = "Remove Duplicates?", value = TRUE, width = NULL),
+                checkboxInput("jackknife", label = "Jackknife?", value = FALSE, width = NULL),
+                checkboxInput("rndmseed", label = "New random seed each run?", value = FALSE, width = NULL),
+                checkboxInput("prtldata", label = "Allow partial data?", value = FALSE, width = NULL),
+                checkboxInput("linear", label = "Allow linear features?", value = TRUE, width = NULL),
+                checkboxInput("quadratic", label = "Allow quadratic features?", value = TRUE, width = NULL),
+                checkboxInput("product", label = "Allow product features?", value = TRUE, width = NULL),
+                checkboxInput("threshold", label = "Allow threshold features?", value = TRUE, width = NULL),
+                checkboxInput("hinge", label = "Allow hinge features?", value = TRUE, width = NULL),
+                plotOutput("subsetselect2",width = "100%",height = "500px", brush = "subset_selected2"),
+                actionButton("subselect2","Add subset"),
                 actionButton("ME_fit","FIT MODEL")
             ),
             mainPanel(h3("Prediction"),
@@ -333,6 +358,8 @@ server <- function(input, output, session) {
                  {rv$itsy <- eval(parse(text=input$input))
                  output$distPlot1 <- renderPlot({image(rv$itsy)},width = "auto")
                  output$distPlot2 <- renderPlot({image(rv$itsy)},width = "auto")
+                 output$subsetselect <- renderPlot({plot.owin(as.owin(rv$itsy)) ; points(coords(rv$pres2),col="green",cex=0.5,pch=20)},width = "auto")
+                 output$subsetselect2 <- renderPlot({plot.owin(as.owin(rv$itsy)) ; points(coords(rv$pres2),col="green",cex=0.5,pch=20);points(rv$abs,col="red",cex=0.5,pch=20)},width = "auto")
                  })
     
     # generate presence
@@ -381,17 +408,33 @@ server <- function(input, output, session) {
     rv$functions <- list()
     
     observeEvent(input$addfctn,{
-        rv$functions <<- c(rv$functions,input$fctn)
+        rv$functions <- c(rv$functions,input$fctn)
+    })
+    observeEvent(input$subselect,{
+        rv$subset <- owin(xrange = c(as.integer(input$subset_selected$xmin),as.integer(input$subset_selected$xmax)), yrange = c(as.integer(input$subset_selected$ymin),as.integer(input$subset_selected$ymax)))
     })
     observeEvent(input$IPP_fit,{
-        
-    rv$ipp.fit            <<- ppm(eval(parse(text=input$IPP_model)),data = envI,nd=input$IPP_grid, correction = input$correction, rboard = input$corrsize, use.gam = input$gam, method = input$method, forcefit = input$force, emend = input$emend)
-    output$IPP_predict <- renderPlot({par(mfrow=c(1,3));
+        if(class(rv$subset) != "owin"){
+            rv$trimmedsubs <- rv$itsy
+        }
+        else{
+            rv$trimmedsubs <- rv$itsy[rv$subset]
+        }
+    withProgress(message = 'Model fitting', value = 0, {   
+    rv$ipp.fit            <- ppm(eval(parse(text=input$IPP_model)),data = rv$mydata,nd=input$IPP_grid, correction = input$correction, rboard = input$corrsize, use.gam = input$gam, method = input$method, forcefit = input$force, emend = input$emend, clipwin = rv$subset)
+    rv$fullfit            <- predict(rv$ipp.fit, as.owin(rv$itsy))
+    incProgress(1/2)
+    output$IPP_predict <- renderPlot({par(mfrow=c(1,4));
                                       plot(rv$itsy,main = "original");
-                                      plot(predict(rv$ipp.fit),main = "prediction")},width = "auto")
-    output$IPP_output  <- renderPrint({print(rv$ipp.fit)})
-    output$IPP_quad  <- renderPrint({rv$ipp.fit$Q})
-    })
+                                      plot(rv$trimmedsubs,main = "original subset");
+                                      plot(predict(rv$ipp.fit),main = "subset prediction");
+                                      plot(rv$fullfit,main = "prediction")
+                                        },width = "auto")
+                                      output$IPP_output  <- renderPrint({print(rv$ipp.fit)})
+                                      output$IPP_quad  <- renderPrint({rv$ipp.fit$Q})
+                                      incProgress(1/2)
+                                      Sys.sleep(0.5)
+    })})
     
     
     ########################
@@ -399,7 +442,15 @@ server <- function(input, output, session) {
     ########################
 
     observeEvent(input$LR_abs,{
-        updateNumericInput(session,"num_abs",value = input$LR_abs)
+        if(!is.null(rv$pres2) & !is.na(input$ME_abs) & input$ME_abs>0 ){
+            
+            rv$abs      <- randomPoints(rv$absref,n = input$LR_abs, p=coords(rv$pres2))
+            rv$data_abs <- raster::extract(rv$absref,rv$abs) %>% data.frame(.,type = 0)
+            output$distPlot2 <- renderPlot({image(rv$itsy);
+                points(coords(rv$pres2),col="green",cex=2,pch=20);
+                points(rv$abs,col="red",cex=2,pch=20)},width = "auto")
+            updateNumericInput(session,"LR_abs",value = input$num_abs)
+        }
     })
     
     observeEvent(input$LR_fit,{
@@ -617,31 +668,59 @@ server <- function(input, output, session) {
     
     
     observeEvent(input$ME_abs,{
-        updateNumericInput(session,"num_abs",value = input$ME_abs)
+        if(!is.null(rv$pres2) & !is.na(input$ME_abs) & input$ME_abs>0 ){
+            
+            rv$abs      <- randomPoints(rv$absref,n = input$ME_abs, p=coords(rv$pres2))
+            rv$data_abs <- raster::extract(rv$absref,rv$abs) %>% data.frame(.,type = 0)
+            output$distPlot2 <- renderPlot({image(rv$itsy);
+                points(coords(rv$pres2),col="green",cex=2,pch=20);
+                points(rv$abs,col="red",cex=2,pch=20)},width = "auto")
+            updateNumericInput(session,"LR_abs",value = input$num_abs)
+        }
+    })
+    observeEvent(input$subselect2,{
+        rv$subset2 <- owin(xrange = c(as.integer(input$subset_selected2$xmin),as.integer(input$subset_selected2$xmax)), yrange = c(as.integer(input$subset_selected2$ymin),as.integer(input$subset_selected2$ymax)))
     })
     
     observeEvent(input$ME_fit,{
+        if(class(rv$subset2) != "owin"){
+            rv$trimmedsubspres <- rv$data_pres
+            rv$trimmedsubsabs <- rv$data_abs
+            rv$absrefnew <- rv$absref
+        }
+        else{
+            extentcut <- extent(c(as.integer(input$subset_selected2$xmin),as.integer(input$subset_selected2$xmax),as.integer(input$subset_selected2$ymin),as.integer(input$subset_selected2$ymax)))
+            rv$absrefnew <- crop(rv$absref,extentcut)
+            rv$trimmedsubspres <- raster::extract(rv$absrefnew,coords(rv$pres2)) %>% data.frame(.,type = 1) %>% na.omit()
+            rv$trimmedsubsabs <- raster::extract(rv$absrefnew,rv$abs) %>% data.frame(.,type = 0) %>% na.omit()
+        }
+        
         
         if(!is.null(rv$data_abs)){
             
             withProgress(message = 'Model fitting', value = 0, {
                 
-                ME.x      <- model.frame(eval(parse(text=input$ME_model)),data = rbind(rv$data_pres,rv$data_abs))
+                ME.x      <- model.frame(eval(parse(text=input$ME_model)),data = rbind(rv$trimmedsubspres,rv$trimmedsubsabs))
                 #ME.p      <- model.frame(eval(parse(text=input$ME_model))[-3],data = rbind(rv$data_pres,rv$data_abs))[,1]
-                ME        <- maxent(ME.x[-1],ME.x[1])
-                pred_ME   <- predict(envS,ME)
+                ME        <- maxent(ME.x[-1],ME.x[1], removeDuplicates = input$dupl, nbg = input$bckgrnd, args = c(paste("jackknife=", toString(input$jackknife),sep=""), paste("randomseed=" ,toString(input$rndmseed),sep="") , paste("allowpartialdata=" ,toString(input$prtldata),sep=""), paste("randomtestpoints=" ,toString(input$testpoints),sep=""), paste("betamultiplier=" ,toString(input$betamult),sep=""), paste("replicates=" ,toString(input$replicates),sep=""), paste("maximumiterations=" ,toString(input$maxits),sep=""), paste("convergencethreshold=" ,toString(exp(-input$prtldata)),sep=""), paste("replicatetype=" ,toString(input$replicatetype),sep=""), paste("linear=" ,toString(input$linear),sep=""), paste("quadratic=" ,toString(input$quadratic),sep=""), paste("product=" ,toString(input$product),sep=""), paste("threshold=" ,toString(input$threshold),sep=""), paste("hinge=" ,toString(input$hinge),sep="")))
+                pred_ME   <- predict(rv$absrefnew,ME)
+                pred_MEfull <- predict(rv$absref,ME)
 
 
 
                 pred_ME  <- as.im(apply(values(pred_ME,format="matrix"),2,rev))
+                pred_MEfull  <- as.im(apply(values(pred_MEfull,format="matrix"),2,rev))
                 logit_ME <- log(pred_ME/(1-pred_ME))
+                logit_MEfull <- log(pred_MEfull/(1-pred_MEfull))
 
                 incProgress(1/2)
-                output$ME_predict <- renderPlot({par(mfrow=c(1,3));
+                output$ME_predict <- renderPlot({par(mfrow=c(1,4));
                     plot(rv$itsy,main = "original");
                     plot(log(rv$itsy)-log(rv$itsy)[input$yloc,input$xloc],main = "log original - reference");
-                    plot(logit_ME-logit_ME[input$yloc,input$xloc],main = "prediction")},width = "auto")
-                
+                    plot(logit_ME-logit_ME[input$yloc,input$xloc],main = "subset prediction");
+                    plot(logit_MEfull-logit_MEfull[input$yloc,input$xloc],main = "prediction");
+                    },width = "auto")
+
                 
                 
                 incProgress(1/2)
