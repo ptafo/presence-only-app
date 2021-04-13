@@ -1,0 +1,123 @@
+Sun Apr 11 16:35:38 CEST 2021
+MaxEnt version 3.4.1
+Reading file absence
+readGrid: max memory 477626368, total allocated 257425408, free 238610072, used 18815336, increment 18815336
+Reading samples from presence
+Read samples: max memory 477626368, total allocated 257425408, free 234583472, used 22841936, increment 4026600
+Adding samples to background in feature space
+Command line used:  autorun -e C:/Users/Marc/Downloads/presence-only-app-main/absence -o C:/Users/Marc/Downloads/presence-only-app-main -s C:/Users/Marc/Downloads/presence-only-app-main/presence -z jackknife=FALSE randomseed=FALSE allowpartialdata=FALSE randomtestpoints=0 betamultiplier=1 replicates=1 maximumiterations=500 convergencethreshold=1 replicatetype=crossvalidate linear=TRUE quadratic=TRUE product=TRUE threshold=TRUE hinge=TRUE responsecurves=TRUE
+Command line to repeat: java density.MaxEnt nowarnings noprefixes responsecurves outputdirectory=C:/Users/Marc/Downloads/presence-only-app-main samplesfile=C:/Users/Marc/Downloads/presence-only-app-main/presence environmentallayers=C:/Users/Marc/Downloads/presence-only-app-main/absence threshold autorun novisible convergencethreshold=1.0
+Species: species
+Layers: D_MAIN_RDS D_URBAN FC RAIN_ANN TMP_MAX TMP_MIN
+Layertypes: Continuous Continuous Continuous Continuous Continuous Continuous
+responsecurves: true
+outputdirectory: C:/Users/Marc/Downloads/presence-only-app-main
+samplesfile: C:/Users/Marc/Downloads/presence-only-app-main/presence
+environmentallayers: C:/Users/Marc/Downloads/presence-only-app-main/absence
+threshold: true
+autorun: true
+visible: false
+convergencethreshold: 1.0
+
+getSamples: max memory 477626368, total allocated 257425408, free 229214744, used 28210664, increment 5368728
+Making features
+makeFeatures: max memory 477626368, total allocated 257425408, free 227872568, used 29552840, increment 1342176
+species: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+590 samples
+Density: max memory 477626368, total allocated 257425408, free 225186000, used 32239408, increment 2686568
+linearPredictor: max memory 477626368, total allocated 257425408, free 225186000, used 32239408, increment 0
+FeaturedSpace: max memory 477626368, total allocated 257425408, free 225186000, used 32239408, increment 0
+Sequential: max memory 477626368, total allocated 257425408, free 225186000, used 32239408, increment 0
+Initial loss: 7.047517221357296
+20: time = 0,071000 loss = 7,044352
+Resulting gain: 0.0031656557012196274
+Projecting...
+Writing file C:\Users\Marc\Downloads\presence-only-app-main\species.csv
+species response curves
+Time since start: 1.289
+Response curve: only D_MAIN_RDS
+Making features
+makeFeatures: max memory 477626368, total allocated 257425408, free 221724448, used 35700960, increment 3461552
+species D_MAIN_RDS: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+590 samples
+Density: max memory 477626368, total allocated 257425408, free 220408168, used 37017240, increment 1316280
+linearPredictor: max memory 477626368, total allocated 257425408, free 220408168, used 37017240, increment 0
+FeaturedSpace: max memory 477626368, total allocated 257425408, free 220408168, used 37017240, increment 0
+Sequential: max memory 477626368, total allocated 257425408, free 220408168, used 37017240, increment 0
+Initial loss: 7.047517221357296
+20: time = 0,019000 loss = 7,046344
+Resulting gain: 0.0011732687221304161
+species response curves
+Response curve: only D_URBAN
+Making features
+makeFeatures: max memory 477626368, total allocated 257425408, free 210234080, used 47191328, increment 10174088
+species D_URBAN: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+590 samples
+Density: max memory 477626368, total allocated 257425408, free 210234080, used 47191328, increment 0
+linearPredictor: max memory 477626368, total allocated 257425408, free 210234080, used 47191328, increment 0
+FeaturedSpace: max memory 477626368, total allocated 257425408, free 210234080, used 47191328, increment 0
+Sequential: max memory 477626368, total allocated 257425408, free 210234080, used 47191328, increment 0
+Initial loss: 7.047517221357296
+20: time = 0,024000 loss = 7,046289
+Resulting gain: 0.0012280776161510687
+species response curves
+Response curve: only FC
+Making features
+makeFeatures: max memory 477626368, total allocated 257425408, free 197400872, used 60024536, increment 12833208
+species FC: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+590 samples
+Density: max memory 477626368, total allocated 257425408, free 197400872, used 60024536, increment 0
+linearPredictor: max memory 477626368, total allocated 257425408, free 197400872, used 60024536, increment 0
+FeaturedSpace: max memory 477626368, total allocated 257425408, free 197400872, used 60024536, increment 0
+Sequential: max memory 477626368, total allocated 257425408, free 197400872, used 60024536, increment 0
+Initial loss: 7.047517221357296
+20: time = 0,014000 loss = 7,045282
+Resulting gain: 0.0022355820335819843
+species response curves
+Response curve: only RAIN_ANN
+Making features
+makeFeatures: max memory 477626368, total allocated 257425408, free 193447976, used 63977432, increment 3952896
+species RAIN_ANN: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+590 samples
+Density: max memory 477626368, total allocated 257425408, free 192130704, used 65294704, increment 1317272
+linearPredictor: max memory 477626368, total allocated 257425408, free 192130704, used 65294704, increment 0
+FeaturedSpace: max memory 477626368, total allocated 257425408, free 192130704, used 65294704, increment 0
+Sequential: max memory 477626368, total allocated 257425408, free 192130704, used 65294704, increment 0
+Initial loss: 7.047517221357296
+20: time = 0,008000 loss = 7,045862
+Resulting gain: 0.0016554189736712743
+species response curves
+Response curve: only TMP_MAX
+Making features
+makeFeatures: max memory 477626368, total allocated 257425408, free 186863032, used 70562376, increment 5267672
+species TMP_MAX: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+590 samples
+Density: max memory 477626368, total allocated 257425408, free 185546480, used 71878928, increment 1316552
+linearPredictor: max memory 477626368, total allocated 257425408, free 185546480, used 71878928, increment 0
+FeaturedSpace: max memory 477626368, total allocated 257425408, free 185546480, used 71878928, increment 0
+Sequential: max memory 477626368, total allocated 257425408, free 185546480, used 71878928, increment 0
+Initial loss: 7.047517221357296
+20: time = 0,013000 loss = 7,044793
+Resulting gain: 0.002723729130869046
+species response curves
+Response curve: only TMP_MIN
+Making features
+makeFeatures: max memory 477626368, total allocated 257425408, free 181828080, used 75597328, increment 3718400
+species TMP_MIN: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+590 samples
+Density: max memory 477626368, total allocated 257425408, free 181828080, used 75597328, increment 0
+linearPredictor: max memory 477626368, total allocated 257425408, free 181828080, used 75597328, increment 0
+FeaturedSpace: max memory 477626368, total allocated 257425408, free 181828080, used 75597328, increment 0
+Sequential: max memory 477626368, total allocated 257425408, free 181828080, used 75597328, increment 0
+Initial loss: 7.047517221357296
+20: time = 0,005000 loss = 7,045093
+Resulting gain: 0.0024244837152442855
+species response curves
+Ending
